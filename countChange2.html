@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body style="background-color: black">
+    <script>
+      // https://www.codewars.com/kata/541af676b589989aed0009e7/train/javascript
+      // https://www.codewars.com/kata/541af676b589989aed0009e7/solutions/javascript
+
+      //   countChange(4, [1,2]) // => 3
+      //   countChange(10, [5,2,3]) // => 4
+      //   countChange(11, [5,7]) //  => 0
+
+      function countChange(money, coins) {
+        const result = [];
+        function find(combination, start) {
+          const sum = combination.reduce(
+            (acc, num, index) => acc + coins[index] * num,
+            0
+          );
+
+          if (sum === money) {
+            result.push([...combination]);
+            return;
+          }
+
+          if (sum > money) {
+            return;
+          }
+
+          for (let position = start; position < coins.length; position++) {
+            combination[position]++;
+            find(combination, position);
+            combination[position]--;
+          }
+        }
+
+        find(new Array(coins.length).fill(0), 0);
+
+        // result actually contains all combinations,
+        // but only their total count is required by the test
+
+        return result.length;
+      }
+
+      // const temp = countChange(300, [5, 10, 20, 50, 100, 200, 500]);
+      // console.log("🚀 ~ file: countChange2.html:48 ~ temp:", temp);
+
+      function countChange1(money, coins) {
+        debugger;
+        if (money < 0 || coins.length === 0) return 0;
+        else if (money === 0) return 1;
+        else
+          return (
+            countChange1(money - coins[0], coins) +
+            countChange1(money, coins.slice(1))
+          );
+      }
+
+      // const countChange = (money, coins) =>
+      //   money === 0
+      //     ? 1
+      //     : money < 0
+      //     ? 0
+      //     : coins.reduce(
+      //         (a, c, i) => a + countChange(money - c, coins.slice(i)),
+      //         0
+      //       );
+
+      var countChange2 = function (money, coins) {
+        var arr = new Array(money + 1).fill(0);
+        arr[0] = 1;
+        for (let i = 0; i < arr.length; i++) {
+          for (let j = coins[i]; j <= money; j++) arr[j] += arr[j - coins[i]];
+        }
+        return arr[money];
+      };
+
+      // function syntheticTests(fn, tests = 20) {
+      //   const start = performance.now();
+      //   for (let i = 0; i < tests; i += 1) {
+      //     // try to mess with runtime optimizations
+      //     if (10 < 3) fn();
+      //     if (13 > 10) fn();
+      //     if ("foo" !== "foot") fn();
+      //     if ("a" === "a") fn();
+      //     if (2 === 2) fn();
+      //   }
+      //   const averageTime = (performance.now() - start) / tests;
+      //   return averageTime;
+      // }
+      // const averageMyTime = syntheticTests(() => {
+      //   const temp = countChange(300, [5, 10, 20, 50, 100, 200, 500]);
+      // });
+      // const averageTime1 = syntheticTests(() => {
+      //   const temp = countChange1(300, [5, 10, 20, 50, 100, 200, 500]);
+      // });
+      // console.log(
+      //   "🚀 ~ file: countChange2.html:78 ~ averageMyTime ~ averageMyTime:",
+      //   averageMyTime
+      // );
+      // console.log(
+      //   "🚀 ~ file: countChange2.html:86 ~ averageTime1 ~ averageTime1:",
+      //   averageTime1
+      // );
+      // console.log(
+      //   "🚀 ~ file: countChange2.html:89 ~ averageMyTime / averageTime1:",
+      //   averageMyTime / averageTime1
+      // );
+
+      const result2 = countChange2(300, [5, 10, 20, 50, 100, 200, 500]);
+      console.log("🚀 ~ file: countChange2.html:104 ~ result2:", result2);
+    </script>
+
+    <!-- <script>
+      // https://www.codewars.com/kata/541af676b589989aed0009e7/train/javascript
+
+      //   countChange(4, [1,2]) // => 3
+      //   countChange(10, [5,2,3]) // => 4
+      //   countChange(11, [5,7]) //  => 0
+
+      function countChange(money, coins) {
+        // keep combinations as strings to avoid deep array comparison for faster search
+        const combinationStringsSet = new Set();
+
+        // compose sorted string to avoid adding same combinations of coins just in different order
+        function getCombinationString(combinationArray) {
+          return [...combinationArray].sort((a, b) => a - b).join("-");
+        }
+
+        // add combination ONLY if it is unique
+        function pushCombination(combinationArray) {
+          const combinationString = getCombinationString(combinationArray);
+          if (!combinationStringsSet.has(combinationString)) {
+            combinationStringsSet.add(combinationString);
+            console.log(
+              "🚀 ~ file: countChange.html:26 ~ pushCombination ~ combinationString:",
+              combinationStringsSet.size,
+              "|",
+              combinationString
+            );
+          }
+        }
+
+        const descendingCoins = [...coins].sort((a, b) => b - a);
+
+        const getSum = (arr) => arr.reduce((s, n) => s + n, 0);
+
+        function composeAllCombinations(combination = []) {
+          const sum = getSum(combination);
+
+          // corner case to end recursion
+          if (sum > money) return;
+
+          // corner case to add combination
+          if (sum === money) return pushCombination(combination);
+
+          // continue search: add each coin once
+          descendingCoins.forEach((coin) => {
+            // skip too big coins
+            if (sum + coin > money) return;
+            composeAllCombinations([...combination, coin]);
+          });
+        }
+
+        composeAllCombinations();
+
+        return combinationStringsSet.size;
+      }
+      // sd;
+      const result = countChange(4, [1, 2]);
+      // const result = countChange(300, [5, 10, 20, 50, 100, 200, 500]);
+      // const result = countChange(300, [5, 10, 20, 50, 100, 200, 500]);
+      console.log(
+        "🚀 ~ file: countChange.html:30 ~ countChange ~ resuasdasdsalt:",
+        result
+      );
+    </script> -->
+  </body>
+</html>

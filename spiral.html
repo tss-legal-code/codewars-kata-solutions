@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body style="background-color: black">
+    <script>
+      // https://www.codewars.com/kata/534e01fbbb17187c7e0000c6/train/javascript
+
+      function spiralize(side) {
+        const table = Array(side)
+          .fill([])
+          .map((arr) => Array(side).fill(0));
+        let y = 0;
+        let x = -1; // initially body is out of table
+
+        const body = 1;
+
+        // loopable directions
+        let dirIndex = 0;
+        const dirStep = [
+          [1, 0], //right
+          [0, 1], // down
+          [-1, 0], // left
+          [0, -1], // up
+        ];
+
+        let prevLength = 0;
+        let thisLength = 0;
+        while (true) {
+          const [stepX, stepY] = dirStep[dirIndex];
+          // n(ext)1 can not be the end of table (first 'loop');
+          const n1 = [x + stepX * 1, y + stepY * 1];
+          // n(ext)2 can not be 'snake' itself (second+ loop);
+          const n2 = [x + stepX * 2, y + stepY * 2];
+
+          const isIn = (pairs) =>
+            pairs.every((pair) => pair > -1 && pair < side);
+
+          const n1IsOut = !isIn(n1);
+          const n2IsBody = isIn(n2) && table[n2[1]][n2[0]] === body;
+
+          if (n1IsOut || n2IsBody) {
+            if (prevLength === 0 || thisLength < 2) {
+              break;
+            } else {
+              prevLength = thisLength;
+              thisLength = 0;
+            }
+            dirIndex = (dirIndex + 1) % dirStep.length;
+            continue;
+          }
+
+          thisLength += 1;
+          prevLength = false;
+
+          [x, y] = n1;
+          table[y][x] = body;
+        }
+
+        return table;
+      }
+
+      const snake = spiralize(15);
+      console.table("🚀 ~ file: spiral.html:18 ~ snake:", snake);
+      console.table(snake);
+
+      // function spiralize(side) {
+      //   const table = Array(side)
+      //     .fill([])
+      //     .map((arr) => Array(side).fill(" "));
+      //   let y = 0;
+      //   let x = -1; // initially body is out of table
+
+      //   const body = "#";
+
+      //   let dirIndex = 0;
+      //   const dirStep = [
+      //     [1, 0], //right
+      //     [0, 1], // down
+      //     [-1, 0], // left
+      //     [0, -1], // up
+      //   ];
+      //   const getNewDirIndex = () => (dirIndex + 1) % dirStep.length;
+
+      //   // [A] check if it is possible to go forward (in current direction)
+      //   // [B] check if it is possible to change direction (in current direction)
+      //   let tureRepeat = false;
+      //   let thisRun = 0;
+      //   while (true) {
+      //     const [stepX, stepY] = dirStep[dirIndex];
+      //     // n(ext)1 can not be the end of table (first 'loop');
+      //     const n1 = [x + stepX * 1, y + stepY * 1];
+      //     // n(ext)2 can not be 'snake' itself (second+ loop);
+      //     const n2 = [x + stepX * 2, y + stepY * 2];
+      //     const isIn = (pairs) =>
+      //       pairs.every((pair) => pair > -1 && pair < side);
+      //     const n1IsOut = !isIn(n1);
+      //     const n2IsBody = isIn(n2) && table[n2[1]][n2[0]] === body;
+      //     if (n1IsOut || n2IsBody) {
+      //       debugger;
+      //       if (tureRepeat || thisRun < 2) break;
+      //       else {
+      //         tureRepeat = true;
+      //         thisRun = 0;
+      //       }
+      //       dirIndex = getNewDirIndex();
+      //       continue;
+      //     }
+
+      //     thisRun += 1;
+      //     tureRepeat = false;
+
+      //     [x, y] = n1;
+      //     table[y][x] = body;
+      //   }
+
+      //   return table;
+      // }
+
+      // const snake = spiralize(7);
+      // console.table("🚀 ~ file: spiral.html:18 ~ snake:", snake);
+      // console.table(snake);
+    </script>
+  </body>
+</html>

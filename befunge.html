@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body>
+    <script>
+      // https://www.codewars.com/kata/526c7b931666d07889000a3c/train/javascript
+
+      // Esoteric languages are pretty hard to program, but it's fairly interesting to write interpreters for them!
+
+      // Your task is to write a method which will interpret Befunge-93 code! Befunge-93 is a language in which the code is presented not as a series of instructions, but as instructions scattered on a 2D plane; your pointer starts at the top-left corner and defaults to moving right through the code. Note that the instruction pointer wraps around the screen! There is a singular stack which we will assume is unbounded and only contain integers. While Befunge-93 code is supposed to be restricted to 80x25, you need not be concerned with code size. Befunge-93 supports the following instructions (from Wikipedia):
+      // https://en.wikipedia.org/wiki/Befunge
+
+      // 0-9 Push this number onto the stack.
+      // + Addition: Pop a and b, then push a+b.
+      // - Subtraction: Pop a and b, then push b-a.
+      // * Multiplication: Pop a and b, then push a*b.
+      // / Integer division: Pop a and b, then push b/a, rounded down. If a is zero, push zero.
+      // % Modulo: Pop a and b, then push the b%a. If a is zero, push zero.
+      // ! Logical NOT: Pop a value. If the value is zero, push 1; otherwise, push zero.
+      // ` (backtick) Greater than: Pop a and b, then push 1 if b>a, otherwise push zero.
+      // > Start moving right.
+      // < Start moving left.
+      // ^ Start moving up.
+      // v Start moving down.
+      // ? Start moving in a random cardinal direction.
+      // _ Pop a value; move right if value = 0, left otherwise.
+      // | Pop a value; move down if value = 0, up otherwise.
+      // " Start string mode: push each character's ASCII value all the way up to the next ".
+      // : Duplicate value on top of the stack. If there is nothing on top of the stack, push a 0.
+      // \ Swap two values on top of the stack. If there is only one value, pretend there is an extra 0 on bottom of the stack.
+      // $ Pop value from the stack and discard it.
+      // . Pop value and output as an integer.
+      // , Pop value and output the ASCII character represented by the integer code that is stored in the value.
+      // # Trampoline: Skip next cell.
+      // p A "put" call (a way to store a value for later use). Pop y, x and v, then change the character at the position (x,y) in the program to the character with ASCII value v.
+      // g A "get" call (a way to retrieve data in storage). Pop y and x, then push ASCII value of the character at that position in the program.
+      // @ End program.
+      //   (i.e. a space) No-op. Does nothing.
+      // The above list is slightly modified: you'll notice if you look at the Wikipedia page that we do not use the user input instructions and dividing by zero simply yields zero.
+
+      const tests = {
+        initTest: ">987v>.v\nv456<  :\n>321 ^ _@",
+        // Testing random direction
+        random: "v@.<\n >1^\n>?<^\n >2^",
+        // Hello World!
+        hello: '>25*"!dlroW olleH":v',
+        // Factorial (8! = 40320)
+        factorial: "08>:1-:v v *_$.@ \n  ^    _$>\:^",
+        // Quine
+        quine: "01->1# +# :# 0# g# ,# :# 5# 8# *# 4# +# -# _@",
+        // Sieve of Eratosthenes
+        eratosthen:
+          '2>:3g" "-!v\  g30          <\n |!`"&":+1_:.:03p>03g+:"&"`|\n @               ^  p3" ":<\n2 2345678901234567890123456789012345678',
+      };
+
+      function interpret(code) {
+        const matrix = code.split("\n").map((str) => str.split(""));
+        const dir = {
+          left: "left",
+          right: "right",
+          up: "up",
+          down: "down",
+          random: "random",
+        };
+        let direction = dir.right;
+        let x = -1; // initial start position is reashed after first 'step';
+        let y = 0;
+        const stack = [];
+        let isStringMode = false;
+        let isNextSkiped = false;
+        let isProgramEnded = false;
+        let output = "";
+        const maxSteps = 100;
+        let stepsCounter = 0;
+        let char = null;
+
+        function push(value) {
+          stack.push(isStringMode ? (value + "").charCodeAt(0) : value);
+        }
+
+        function pop() {
+          return stack.pop();
+        }
+
+        const operations = {
+          0: () => push(0),
+          1: () => push(1),
+          2: () => push(2),
+          3: () => push(3),
+          4: () => push(4),
+          5: () => push(5),
+          6: () => push(6),
+          7: () => push(7),
+          8: () => push(8),
+          9: () => push(9),
+          "+": () => {
+            const a = pop();
+            const b = pop();
+            push(b + a);
+          },
+          "-": () => {
+            const a = pop();
+            const b = pop();
+            push(b - a);
+          },
+          "*": () => {
+            const a = pop();
+            const b = pop();
+            push(b * a);
+          },
+          "/": () => {
+            const a = pop();
+            const b = pop();
+            push(a === 0 ? 0 : Math.floor(b / a));
+          },
+          "%": () => {
+            const a = pop();
+            const b = pop();
+            push(a === 0 ? 0 : b % a);
+          },
+          "!": () => {
+            const value = pop();
+            push(a === 0 ? 1 : 0);
+          },
+          "`": () => {
+            const a = pop();
+            const b = pop();
+            push(b > a ? 1 : 0);
+          },
+          ">": () => (direction = dir.right),
+          "<": () => (direction = dir.left),
+          "^": () => (direction = dir.up),
+          v: () => (direction = dir.down),
+          "?": () => (direction = dir.random),
+          _: () => (direction = pop() === 0 ? dir.right : dir.left),
+          "|": () => (direction = pop() === 0 ? dir.down : dir.up),
+          // '"': () => isStringMode = !isStringMode), // toggler
+          ":": () => {
+            const value = pop();
+            if (value === undefined) {
+              push(0);
+            } else {
+              push(value);
+              push(value);
+            }
+          },
+          "\\": () => {
+            if (!stack.length) return; // my idea...
+            const a = pop();
+            const b = pop() || 0;
+            push(b, a);
+          },
+          $: () => pop(),
+          ".": () => {
+            output += pop();
+          },
+          ",": () => (output += String.fromCharCode(pop())),
+          "#": () => (isNextSkiped = true),
+          p: () => {
+            const y = pop();
+            const x = pop();
+            const v = pop();
+            matrix[y][x] = v;
+          },
+          g: () => {
+            const y = pop();
+            const x = pop();
+            push(String.fromCharCode(matrix[y][x]));
+          },
+          "@": () => (isProgramEnded = true),
+          " ": () => {}, // do nothing
+        };
+
+        const steps = {
+          // TODO: add playground wrapping  ?
+          [dir.left]: (count) => {
+            x -= count;
+          },
+          [dir.right]: (count) => {
+            x += count;
+          },
+          [dir.up]: (count) => {
+            y -= count;
+          },
+          [dir.down]: (count) => {
+            y += count;
+          },
+        };
+
+        function goOneStep() {
+          // TODO:  add playground wrapping check ??
+          if (isNextSkiped) {
+            isNextSkiped = false;
+            steps[direction](2);
+          } else {
+            steps[direction](1);
+          }
+
+          // TODO:  add playground wrapping check ??
+          char = matrix[y][x];
+
+          if (char === '"') {
+            isStringMode = !isStringMode;
+          }
+
+          if (isStringMode) {
+            push(char + "");
+          } else {
+            operations[char]();
+          }
+        }
+
+        function handleChar() {}
+
+        while (!isProgramEnded && stepsCounter < maxSteps) {
+          goOneStep();
+          stepsCounter += 1;
+        }
+
+        return output;
+      }
+
+      const testEntries = Object.entries(tests);
+      for (let i = 0; i < testEntries.length; i += 1) {
+        const [name, code] = testEntries[i];
+        const result = interpret(code);
+        console.log(`${i}: ${name}:\n\n${code}\n\noutput: "${result}"`);
+      }
+    </script>
+  </body>
+</html>

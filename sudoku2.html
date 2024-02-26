@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body style="background-color: black">
+    <script>
+      // https://www.codewars.com/kata/5296bc77afba8baa690002d7/train/javascript
+      var puzzle = [
+        [5, 3, 0, /**/ 0, 7, 0, /**/ 0, 0, 0],
+        [6, 0, 0, /**/ 1, 9, 5, /**/ 0, 0, 0],
+        [0, 9, 8, /**/ 0, 0, 0, /**/ 0, 6, 0],
+        //////////////////////////////////////
+        [8, 0, 0, /**/ 0, 6, 0, /**/ 0, 0, 3],
+        [4, 0, 0, /**/ 8, 0, 3, /**/ 0, 0, 1],
+        [7, 0, 0, /**/ 0, 2, 0, /**/ 0, 0, 6],
+        //////////////////////////////////////
+        [0, 6, 0, /**/ 0, 0, 0, /**/ 2, 8, 0],
+        [0, 0, 0, /**/ 4, 1, 9, /**/ 0, 0, 5],
+        [0, 0, 0, /**/ 0, 8, 0, /**/ 0, 7, 9],
+      ];
+
+      /**
+       * return the solved puzzle as a 2d array of 9 x 9
+       * puzzle is expected to have SINGLE solution
+       */
+      function sudoku(puzzle) {
+        console.table(puzzle);
+        const table = JSON.parse(JSON.stringify(puzzle));
+        let optionsCount = 0;
+
+        function getOptionsLeft(options, taken) {
+          const optionsLeft = options.filter((option) => option !== taken);
+          if (optionsLeft.length === 1) {
+            optionsCount -= 1;
+            return optionsLeft[0];
+          }
+          return optionsLeft;
+        }
+
+        // array of options
+        function getOptions() {
+          optionsCount += 1;
+          return [1, 2, 3, 4, 5, 6, 7, 8, 9];
+        }
+
+        // assign array of options to each 'not defined' cell
+        for (let y = 0; y < 9; y += 1) {
+          for (let x = 0; x < 9; x += 1) {
+            table[y][x] =
+              typeof table[y][x] === "number" && table[y][x] !== 0
+                ? table[y][x]
+                : getOptions();
+          }
+        }
+
+        function reduceOptions() {
+          // reduce options
+          for (let y = 0; y < 9; y += 1) {
+            inner: for (let x = 0; x < 9; x += 1) {
+              // skip arrays of options
+              if (Array.isArray(table[y][x])) continue inner;
+
+              const taken = table[y][x];
+              // remove option from options in the row
+              table[y] = table[y].map((value) =>
+                Array.isArray(value) ? getOptionsLeft(value, taken) : value
+              );
+              // remove option from options in the column
+              for (let k = 0; k < 9; k += 1) {
+                if (Array.isArray(table[k][x])) {
+                  table[k][x] = getOptionsLeft(table[k][x], taken);
+                }
+              }
+              // remove option from options in the block
+              const bX = Math.floor(x / 3) * 3;
+              const bY = Math.floor(y / 3) * 3;
+              for (let j = bY; j < bY + 3; j += 1) {
+                for (let t = bX; t < bX + 3; t += 1) {
+                  if (Array.isArray(table[j][t])) {
+                    table[j][t] = getOptionsLeft(table[j][t], taken);
+                  }
+                }
+              }
+            }
+          }
+        }
+
+        // counter-inifinite loop 'safety belt'
+        let counter = 0;
+        const max = 100;
+
+        while (optionsCount > 0 && counter < max) {
+          console.log(`iteration: ${counter}, optionsCount: ${optionsCount}`);
+          reduceOptions();
+          counter++;
+        }
+
+        if (counter >= max) console.log("reached max counter:", counter);
+
+        console.table(table);
+
+        return table;
+      }
+
+      const solution = sudoku(puzzle);
+    </script>
+  </body>
+</html>
+
+<!-- // 
+// const counter = {
+//   max: 100,
+//   number: 0,
+//   get reachedMax() {
+//     const result = this.number >= this.max;
+//     console.log(
+//       "🚀 ~ file: sudoku.html:109 ~ getreachedMax ~ result:",
+//       result
+//     );
+//     return result;
+//   },
+//   next() {
+//     this.number += 1;
+//     console.log(
+//       "🚀 ~ file: sudoku.html:112 ~ next ~ this.number:",
+//       this.number
+//     );
+//     if (this.reachedMax) {
+//       console.log("SAFETY COUNTER REACHED MAX:", this.number, this.max);
+//     }
+//   },
+// }; -->

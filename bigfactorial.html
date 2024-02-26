@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body style="background-color: black">
+    <script>
+      // https://www.codewars.com/kata/557f6437bf8dcdd135000010/train/javascript
+      // https://www.codewars.com/kata/557f6437bf8dcdd135000010/solutions/javascript
+      /**
+       * a and b are strings
+       */
+      function add(a, b) {
+        let aIndex = a.length - 1;
+        let bIndex = b.length - 1;
+        let carry = 0;
+        const result = [];
+        while (aIndex > -1 || bIndex > -1) {
+          const aValue = aIndex > -1 ? +a[aIndex] : 0;
+          const bValue = bIndex > -1 ? +b[bIndex] : 0;
+          const sum = aValue + bValue + carry;
+          const resultingDigit = sum % 10;
+          carry = Math.floor(sum / 10);
+
+          result.push(resultingDigit);
+
+          aIndex -= 1;
+          bIndex -= 1;
+        }
+        carry && result.push(carry);
+        // reverse result as lower level digits were pushed first
+        return result.reverse().join("");
+      }
+
+      /**
+       * a and b are strings
+       */
+      function multiply(aRaw, bRaw) {
+        const arrayOfStringsOfDigits = [];
+        let extraZeros = 0;
+
+        // cut out trailing zeroes from input and then just add them to the result
+        const zeroReplacer = (sequence) => {
+          extraZeros += sequence.length;
+          return "";
+        };
+        const zeroEndingRegExp = /0+$/g;
+        const a = aRaw.replace(zeroEndingRegExp, zeroReplacer);
+        const b = bRaw.replace(zeroEndingRegExp, zeroReplacer);
+
+        // read digits from right to left
+        let bIndex = b.length - 1;
+        // each digit of 'b' ....
+        while (true) {
+          if (bIndex === -1) break;
+          let carry = 0;
+          const arrayOfDigits = [];
+
+          let aIndex = a.length - 1;
+          // ... multiply by each digit of 'a'
+          while (aIndex > -1) {
+            const product = +a[aIndex] * +b[bIndex] + carry;
+            const newDigit = product % 10;
+            carry = Math.floor(product / 10);
+            arrayOfDigits.push(newDigit);
+            // read digits from right (lesser) to left (bigger)
+            aIndex -= 1;
+          }
+
+          // add carry (if any)
+          carry && arrayOfDigits.push(carry);
+
+          // finally push to array
+          arrayOfStringsOfDigits.push(
+            // need to reverse array as lower digits go first
+            arrayOfDigits.reverse().join("") + "0".repeat(extraZeros)
+          );
+
+          extraZeros += 1;
+          // read digits from right (lesser) to left (bigger)
+          bIndex -= 1;
+        }
+
+        const result = arrayOfStringsOfDigits.reduce((a, n) => add(a, n), "0");
+        return result;
+      }
+
+      function factorial(n) {
+        if (+n < 1) return null;
+        let result = "1";
+        for (let i = 2; i <= n; i += 1) {
+          result = multiply(result, i + "");
+          console.log(
+            "🚀 ~ file: bigfactorial.html:95 ~ factorial ~ result:",
+            i,
+            "\n",
+            result
+          );
+        }
+
+        return result;
+      }
+
+      const f1 = factorial(11215);
+      console.log("🚀 ~ file: bigfactorial.html:55 ~ f1:", f1);
+
+      // other solutions
+
+      function factorial2(n) {
+        var res = [1];
+        for (var i = 2; i <= n; ++i) {
+          var c = 0;
+          for (var j = 0; j < res.length || c !== 0; ++j) {
+            c += (res[j] || 0) * i;
+            res[j] = c % 10;
+            c = Math.floor(c / 10);
+          }
+        }
+        return res.reverse().join("");
+      }
+    </script>
+  </body>
+</html>
